@@ -1,0 +1,303 @@
+index.html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebAPP - 职位招聘信息</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .job-card, .user-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+        }
+        .error {
+            color: red;
+        }
+        .search-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        input[type="text"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WebAPP - 职位招聘信息</h1>
+        
+        <div class="section">
+            <h2>职位信息</h2>
+            <button onclick="loadJobs()">加载职位列表</button>
+            <button onclick="loadJobById()">按ID加载职位</button>
+            <input type="number" id="jobIdInput" placeholder="输入职位ID" value="1" min="1">
+            <br><br>
+            <div class="search-container">
+                <label for="jobDescriptionSearch">按职位描述搜索:</label>
+                <input type="text" id="jobDescriptionSearch" placeholder="输入搜索关键词">
+                <button onclick="searchJobsByDescription()">搜索</button>
+            </div>
+            <div id="jobsContainer"></div>
+        </div>
+        
+        <div class="section">
+            <h2>用户信息</h2>
+            <button onclick="loadUsers()">加载用户列表</button>
+            <button onclick="loadUserById()">按ID加载用户</button>
+            <input type="number" id="userIdInput" placeholder="输入用户ID" value="1" min="1">
+            <div id="usersContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // API基础地址
+        const API_BASE = 'http://127.0.0.1:8000';
+        
+        // 加载职位列表
+        async function loadJobs() {
+            const container = document.getElementById('jobsContainer');
+            container.innerHTML = '<div class="loading">正在加载职位信息...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/jobs`);
+                const jobs = await response.json();
+                
+                if (jobs.error) {
+                    container.innerHTML = `<div class="error">错误: ${jobs.error}</div>`;
+                    return;
+                }
+                
+                if (jobs.length === 0) {
+                    container.innerHTML = '<div>暂无职位信息</div>';
+                    return;
+                }
+                
+                let html = '';
+                jobs.forEach(job => {
+                    html += `
+                        <div class="job-card">
+                            <h3>${job.job_title || '未命名职位'}</h3>
+                            <p><strong>公司:</strong> ${job.company || '未提供'}</p>
+                            <p><strong>工作地点:</strong> ${job.job_location || '未提供'}</p>
+                            <p><strong>薪资:</strong> ${job.salary || '面议'}</p>
+                            <p><strong>学历要求:</strong> ${job.education_requirement || '未指定'}</p>
+                            <p><strong>工作性质:</strong> ${job.job_nature || '全职'}</p>
+                            <p><strong>描述:</strong> ${job.job_description || '暂无描述'}</p>
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = `<div class="error">加载失败: ${error.message}</div>`;
+            }
+        }
+        
+        // 按ID加载职位
+        async function loadJobById() {
+            const jobId = document.getElementById('jobIdInput').value;
+            if (!jobId) {
+                alert('请输入职位ID');
+                return;
+            }
+            
+            const container = document.getElementById('jobsContainer');
+            container.innerHTML = '<div class="loading">正在加载职位信息...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/jobs/${jobId}`);
+                const job = await response.json();
+                
+                if (job.error) {
+                    container.innerHTML = `<div class="error">错误: ${job.error}</div>`;
+                    return;
+                }
+                
+                let html = `
+                    <div class="job-card">
+                        <h3>${job.job_title || '未命名职位'}</h3>
+                        <p><strong>公司:</strong> ${job.company || '未提供'}</p>
+                        <p><strong>工作地点:</strong> ${job.job_location || '未提供'}</p>
+                        <p><strong>薪资:</strong> ${job.salary || '面议'}</p>
+                        <p><strong>学历要求:</strong> ${job.education_requirement || '未指定'}</p>
+                        <p><strong>工作性质:</strong> ${job.job_nature || '全职'}</p>
+                        <p><strong>描述:</strong> ${job.job_description || '暂无描述'}</p>
+                    </div>
+                `;
+                
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = `<div class="error">加载失败: ${error.message}</div>`;
+            }
+        }
+        
+        // 按职位描述搜索职位
+        async function searchJobsByDescription() {
+            const description = document.getElementById('jobDescriptionSearch').value.trim();
+            if (!description) {
+                alert('请输入要搜索的职位描述关键词');
+                return;
+            }
+            
+            const container = document.getElementById('jobsContainer');
+            container.innerHTML = '<div class="loading">正在搜索职位信息...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/jobs/search/description?description=${encodeURIComponent(description)}`);
+                const jobs = await response.json();
+                
+                if (jobs.error) {
+                    container.innerHTML = `<div class="error">错误: ${jobs.error}</div>`;
+                    return;
+                }
+                
+                if (jobs.length === 0) {
+                    container.innerHTML = '<div>没有找到匹配的职位信息</div>';
+                    return;
+                }
+                
+                let html = '';
+                jobs.forEach(job => {
+                    html += `
+                        <div class="job-card">
+                            <h3>${job.job_title || '未命名职位'}</h3>
+                            <p><strong>公司:</strong> ${job.company || '未提供'}</p>
+                            <p><strong>工作地点:</strong> ${job.job_location || '未提供'}</p>
+                            <p><strong>薪资:</strong> ${job.salary || '面议'}</p>
+                            <p><strong>学历要求:</strong> ${job.education_requirement || '未指定'}</p>
+                            <p><strong>工作性质:</strong> ${job.job_nature || '全职'}</p>
+                            <p><strong>描述:</strong> ${job.job_description || '暂无描述'}</p>
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = `<div class="error">搜索失败: ${error.message}</div>`;
+            }
+        }
+        
+        // 加载用户列表
+        async function loadUsers() {
+            const container = document.getElementById('usersContainer');
+            container.innerHTML = '<div class="loading">正在加载用户信息...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/users`);
+                const users = await response.json();
+                
+                if (users.error) {
+                    container.innerHTML = `<div class="error">错误: ${users.error}</div>`;
+                    return;
+                }
+                
+                if (users.length === 0) {
+                    container.innerHTML = '<div>暂无用户信息</div>';
+                    return;
+                }
+                
+                let html = '';
+                users.forEach(user => {
+                    html += `
+                        <div class="user-card">
+                            <h3>${user.username || '未设置用户名'}</h3>
+                            <p><strong>邮箱:</strong> ${user.email || '未提供'}</p>
+                            <p><strong>用户类型:</strong> ${user.user_type || '未指定'}</p>
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = `<div class="error">加载失败: ${error.message}</div>`;
+            }
+        }
+        
+        // 按ID加载用户
+        async function loadUserById() {
+            const userId = document.getElementById('userIdInput').value;
+            if (!userId) {
+                alert('请输入用户ID');
+                return;
+            }
+            
+            const container = document.getElementById('usersContainer');
+            container.innerHTML = '<div class="loading">正在加载用户信息...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/users/${userId}`);
+                const user = await response.json();
+                
+                if (user.error) {
+                    container.innerHTML = `<div class="error">错误: ${user.error}</div>`;
+                    return;
+                }
+                
+                let html = `
+                    <div class="user-card">
+                        <h3>${user.username || '未设置用户名'}</h3>
+                        <p><strong>邮箱:</strong> ${user.email || '未提供'}</p>
+                        <p><strong>用户类型:</strong> ${user.user_type || '未指定'}</p>
+                    </div>
+                `;
+                
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = `<div class="error">加载失败: ${error.message}</div>`;
+            }
+        }
+        
+        // 页面加载完成后自动尝试加载职位列表
+        window.onload = function() {
+            console.log("页面已加载，可以开始获取数据");
+        };
+    </script>
+</body>
+</html>
